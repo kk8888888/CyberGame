@@ -5,8 +5,6 @@
 A sleek, self-contained, offline-first collection of 12 cognitive games designed to challenge your focus, memory, logic, and creativity. All packed into a single HTML file with a dynamic, cyberpunk-inspired "Matrix" aesthetic. No internet connection required after the first load.
 
 ### [➡️ View Live Demo](https://kk8888888.github.io/CyberGame/)
-show demo of pges.
-
 ---
 
 ## ✨ Features
