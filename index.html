@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brain Games Offline [12 Games | Definitive Edition]</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #0d0d0d; --primary-glow: #00ffff; --secondary-glow: #ff00ff;
+            --text-color: #e0e0e0; --card-bg: rgba(10, 25, 47, 0.85); --border-color: rgba(0, 255, 255, 0.5);
+            --success-color: #00ff7f; --error-color: #ff4d4d; --shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+            --font-family: 'Share Tech Mono', monospace;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+        #matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        body { font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); text-align: center; line-height: 1.6; margin: 0; overflow-x: hidden; }
+        .main-container { max-width: 700px; margin: 40px auto; padding: 0 20px; position: relative; z-index: 2; }
+        header h1 { font-weight: 700; color: var(--primary-glow); font-size: 2.5rem; text-shadow: 0 0 5px var(--primary-glow), 0 0 10px var(--primary-glow); position: relative; }
+        .glitch { position: relative; animation: glitch-skew 1s infinite linear alternate-reverse; }
+        .glitch::before, .glitch::after { content: attr(data-text); position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); }
+        .glitch::before { left: 2px; text-shadow: -2px 0 var(--secondary-glow); clip: rect(44px, 450px, 56px, 0); animation: glitch-anim 5s infinite linear alternate-reverse; }
+        .glitch::after { left: -2px; text-shadow: -2px 0 var(--primary-glow), 2px 2px var(--secondary-glow); clip: rect(85px, 450px, 90px, 0); animation: glitch-anim2 5s infinite linear alternate-reverse; }
+        @keyframes glitch-anim { 0%{clip:rect(42px,9999px,44px,0);transform:skew(.3deg)}5%{clip:rect(17px,9999px,96px,0)}10%{clip:rect(40px,9999px,62px,0)}15%{clip:rect(18px,9999px,82px,0)}20%{clip:rect(96px,9999px,50px,0)}100%{clip:rect(2px,9999px,148px,0);transform:skew(-.2deg)} }
+        @keyframes glitch-anim2 { 0%{clip:rect(85px,9999px,90px,0);transform:skew(.2deg)}100%{clip:rect(54px,9999px,133px,0);transform:skew(.5deg)} }
+        @keyframes glitch-skew { 0% { transform: skew(1deg); } 100% { transform: skew(-1deg); } }
+
+        footer { margin-top: 40px; color: #999; font-size: 14px; }
+        .card { background: var(--card-bg); backdrop-filter: blur(10px); padding: 25px 35px; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: var(--shadow); margin-bottom: 25px; text-align: left; }
+        .card h2 { margin-top: 0; font-weight: 600; text-align: center; color: var(--primary-glow); }
+        .game-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .game-card { background: rgba(0,0,0,0.5); padding: 20px; border-radius: 8px; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); text-align: center; overflow: hidden; position: relative; }
+        .game-card::before { content: ''; position: absolute; top: -100%; left: 0; width: 100%; height: 100%; background: linear-gradient(0deg, transparent, var(--primary-glow), transparent); transition: top 0.5s ease; }
+        .game-card:hover::before { top: 100%; }
+        .game-card:hover { transform: translateY(-5px); box-shadow: 0 0 20px var(--primary-glow); border-color: var(--primary-glow); }
+        .game-card i { font-size: 2rem; color: var(--primary-glow); margin-bottom: 10px; transition: color 0.3s; }
+        .game-card:hover i { color: #fff; }
+        .game-card-title { font-weight: 600; font-size: 1rem; }
+        .game-card-status { font-size: 0.8rem; color: var(--primary-glow); font-weight: bold; }
+        
+        /* Shared Game Styles */
+        .game-instance { text-align: center; }
+        .game-header p { font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--primary-glow); }
+        .feedback-area { border: 2px dashed rgba(255,255,255,0.2); padding: 10px; border-radius: 8px; transition: all 0.2s ease; margin-bottom: 20px; min-height: 50px; display: flex; justify-content: center; align-items: center; }
+        .feedback-correct { border-color: var(--success-color); box-shadow: 0 0 15px var(--success-color); }
+        .feedback-wrong { border-color: var(--error-color); box-shadow: 0 0 15px var(--error-color); }
+        .options-area { display: flex; justify-content: center; gap: 15px; margin-top: 20px; flex-wrap: wrap; min-height: 50px; }
+        
+        button, .button { font-family: var(--font-family); padding: 12px 24px; font-size: 16px; color: var(--bg-color); font-weight: bold; background-color: var(--primary-glow); border: none; border-radius: 4px; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 0 5px var(--primary-glow), inset 0 0 5px rgba(255,255,255,0.5); text-decoration: none; }
+        button:hover, .button:hover { color: #fff; box-shadow: 0 0 20px var(--primary-glow), inset 0 0 10px rgba(0,0,0,0.5); transform: scale(1.05); }
+        button:disabled, .button:disabled { cursor: not-allowed; background-color: #555 !important; box-shadow: none; color: #999 !important; }
+        .start-button { background-color: var(--success-color); box-shadow: 0 0 5px var(--success-color), inset 0 0 5px rgba(255,255,255,0.5); }
+        .utility-button { background-color: #777; box-shadow: 0 0 5px #777, inset 0 0 5px rgba(255,255,255,0.5); margin-top: 20px; }
+        
+        #history-list { list-style: none; padding: 0; margin: 0; }
+        #history-list li { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px dashed var(--border-color); }
+        #history-list li:last-child { border-bottom: none; }
+        #history-list li .history-score { font-weight: 600; color: var(--primary-glow); }
+        #history-list li .history-date { font-size: 0.8em; color: #888; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: var(--card-bg); padding: 40px; border-radius: 8px; border: 1px solid var(--primary-glow); text-align: center; box-shadow: 0 0 25px var(--primary-glow); max-width: 400px; margin: 20px; }
+        #modal-title { margin-top: 0; color: var(--primary-glow); }
+        #modal-body { margin: 20px 0; line-height: 1.8; text-align: left; }
+        .final-score-display { font-size: 48px; font-weight: 700; color: var(--primary-glow); display: block; margin: 10px 0 20px; text-shadow: 0 0 10px var(--primary-glow); }
+        
+        /* Game-specific styles */
+        .causal-item { border: 2px solid var(--border-color); padding: 10px; margin-bottom: 10px; border-radius: 8px; cursor: grab; background: rgba(0,0,0,0.5); transition: background 0.2s; user-select: none; }
+        .causal-item:hover { background: rgba(0, 255, 255, 0.1); }
+        .causal-item.dragging { opacity: 0.5; }
+        .causal-item i { font-size: 1.5em; margin-right: 15px; }
+        .inference-grid { display: grid; grid-template-columns: repeat(3, 60px); grid-template-rows: repeat(3, 60px); gap: 5px; margin: 20px auto; }
+        .grid-cell { width: 60px; height: 60px; border: 2px dashed var(--border-color); border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 2em; color: var(--primary-glow); cursor: pointer; }
+        .inference-clues { text-align: left; list-style-type: '>> '; padding-left: 20px; }
+        .rhythm-button { width: 100px; height: 100px; border-radius: 50%; opacity: 0.6; }
+        .rhythm-button.active { opacity: 1; transform: scale(1.1); box-shadow: 0 0 25px var(--primary-glow); }
+        .gg-input { font-family: var(--font-family); background: transparent; border: 2px solid var(--border-color); border-radius: 4px; color: var(--text-color); font-size: 1.5em; text-align: center; padding: 10px; width: 80%; }
+        #ff-canvas { border: 2px solid var(--primary-glow); background-color: rgba(0,0,0,0.2); cursor: none; box-shadow: 0 0 20px var(--primary-glow); }
+        .origami-option, .mirror-option { border: 3px solid var(--border-color); padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .origami-option:hover, .mirror-option:hover { border-color: var(--primary-glow); background: rgba(0, 255, 255, 0.1); }
+        .origami-option svg, .mirror-option svg { width: 100%; height: auto; }
+        .origami-option svg path, .mirror-option svg path, .origami-question-svg path, .mirror-question-svg path { stroke: var(--text-color) !important; fill: #eee !important; }
+        .origami-question-svg, .mirror-question-svg { max-width: 200px; border: 1px solid var(--border-color); padding: 10px; border-radius: 8px; margin: 0 auto; }
+        .ar-option { text-align:left; border:2px solid var(--border-color); padding:10px; border-radius:8px; cursor:pointer; margin-bottom:10px; }
+        .ar-option.selected { background: rgba(0, 255, 255, 0.2); border-color: var(--primary-glow); }
+        .uu-textarea { box-sizing: border-box; width: 100%; height: 150px; background: transparent; border: 2px solid var(--border-color); color: var(--text-color); padding: 10px; font-family: var(--font-family); font-size: 1em; }
+    </style>
+</head>
+<body>
+    <canvas id="matrix-bg"></canvas>
+
+    <div class="main-container">
+        <header>
+            <h1 class="glitch" data-text="Brain Games Offline">Brain Games Offline</h1>
+        </header>
+
+        <main id="main-menu">
+            <section class="card">
+                <h2>Game Menu</h2>
+                <div class="game-grid">
+                    <div class="game-card" data-game="focus-flow"><i class="fa-solid fa-rocket"></i><div class="game-card-title">Focus Flow 2D</div><div class="game-card-status">[ANIMATED]</div></div>
+                    <div class="game-card" data-game="color-clash"><i class="fa-solid fa-palette"></i><div class="game-card-title">Color Clash</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="audio-scape"><i class="fa-solid fa-ear-listen"></i><div class="game-card-title">Audio-Scape</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="mental-origami"><i class="fa-solid fa-scroll"></i><div class="game-card-title">Mental Origami</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="causal-chain"><i class="fa-solid fa-link"></i><div class="game-card-title">Causal Chain</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="inference-island"><i class="fa-solid fa-map"></i><div class="game-card-title">Inference Island</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="rhythm-replay"><i class="fa-solid fa-wave-square"></i><div class="game-card-title">Rhythm Replay</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="mirror-image"><i class="fa-solid fa-right-left"></i><div class="game-card-title">Mirror Image</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="connotative-connections"><i class="fa-solid fa-comment-dots"></i><div class="game-card-title">Connotations</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="gibberish-guru"><i class="fa-solid fa-keyboard"></i><div class="game-card-title">Gibberish Guru</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="ambiguity-riddle"><i class="fa-solid fa-shuffle"></i><div class="game-card-title">Ambiguity Riddle</div><div class="game-card-status">[Playable]</div></div>
+                    <div class="game-card" data-game="unusual-uses"><i class="fa-solid fa-lightbulb"></i><div class="game-card-title">Unusual Uses</div><div class="game-card-status">[Playable]</div></div>
+                </div>
+            </section>
+            <section class="card">
+                <h2>[Game History_LOG]</h2>
+                <ul id="history-list"><li>No scores yet!</li></ul>
+            </section>
+        </main>
+        
+        <div id="game-container-host"></div>
+    </div>
+
+    <div id="universal-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <h2 id="modal-title">Modal Title</h2>
+            <div id="modal-body">Modal body content goes here.</div>
+            <button id="modal-button-primary" class="start-button">Primary Action</button>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    //================================================================================
+    // SCRIPT START
+    //================================================================================
+
+    // --- 0. ANIMATED BACKGROUND ---
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    let letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890@#$%^&*()*&^%+-/~{[|`]}'.split('');
+    let fontSize = 10, columns = canvas.width / fontSize;
+    let drops = Array(Math.floor(columns)).fill(1);
+    function drawMatrix() {
+        ctx.fillStyle = 'rgba(13, 13, 13, .1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        for (let i = 0; i < drops.length; i++) {
+            let text = letters[Math.floor(Math.random() * letters.length)];
+            ctx.fillStyle = '#00ffff';
+            ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+            if (drops[i] * fontSize > canvas.height && Math.random() > .95) drops[i] = 0;
+            drops[i]++;
+        }
+    }
+    const matrixInterval = setInterval(drawMatrix, 40);
+
+    // --- 1. MAIN GAME MANAGER ---
+    const mainManager = {
+        dom: {
+            mainMenu: document.getElementById('main-menu'),
+            historyList: document.getElementById('history-list'),
+            gameGrid: document.querySelector('.game-grid'),
+            gameHost: document.getElementById('game-container-host'),
+            modal: document.getElementById('universal-modal'),
+            modalTitle: document.getElementById('modal-title'),
+            modalBody: document.getElementById('modal-body'),
+            modalButton: document.getElementById('modal-button-primary'),
+        },
+        games: {}, activeGame: null,
+        init() {
+            this.dom.gameGrid.addEventListener('click', e => {
+                const card = e.target.closest('.game-card');
+                if (card && card.dataset.game) this.launchGame(card.dataset.game);
+            });
+            this.loadHistory();
+            Object.values(gameList).forEach(game => this.registerGame(game.ID, game));
+        },
+        registerGame(id, gameObject) { this.games[id] = gameObject; },
+        launchGame(gameId) {
+            if (this.activeGame) this.activeGame.stop();
+            const game = this.games[gameId];
+            if (!game) return;
+            this.activeGame = game;
+            this.dom.mainMenu.style.display = 'none';
+            this.dom.gameHost.innerHTML = game.render();
+            game.init(this, this.dom.gameHost.firstElementChild);
+            game.showInstructions();
+        },
+        showMenu() {
+            if (this.activeGame) { this.activeGame.stop(); this.activeGame = null; }
+            this.dom.gameHost.innerHTML = '';
+            this.dom.mainMenu.style.display = 'block';
+            this.loadHistory();
+        },
+        showModal(title, body, buttonText, callback) {
+            this.dom.modalTitle.textContent = `[${title}]`;
+            this.dom.modalBody.innerHTML = body;
+            this.dom.modalButton.textContent = buttonText;
+            this.dom.modal.style.display = 'flex';
+            this.dom.modalButton.onclick = () => {
+                this.dom.modal.style.display = 'none';
+                if (callback) callback();
+            };
+        },
+        HISTORY_KEY: 'cyberBrainHistory',
+        saveHistory(gameName, score) {
+            if (score === 0 && this.SCORE_TYPE !== 'Time (ms)') return;
+            let history = JSON.parse(localStorage.getItem(this.HISTORY_KEY)) || [];
+            history.push({ game: gameName, score: score, date: new Date().toLocaleDateString() });
+            history.sort((a, b) => b.score - a.score);
+            history = history.slice(0, 10);
+            localStorage.setItem(this.HISTORY_KEY, JSON.stringify(history));
+        },
+        loadHistory() {
+            let history = JSON.parse(localStorage.getItem(this.HISTORY_KEY)) || [];
+            this.dom.historyList.innerHTML = '';
+            if (history.length === 0) { this.dom.historyList.innerHTML = '<li>[No scores logged]</li>'; return; }
+            history.forEach(rec => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div>${rec.game}</div><div><span class="history-score">${rec.score}</span> <span class="history-date">${rec.date}</span></div>`;
+                this.dom.historyList.appendChild(li);
+            });
+        }
+    };
+    
+    // --- 2. BASE GAME CLASS (REFINED) ---
+    class BaseGame {
+        constructor(config) {
+            Object.assign(this, {
+                manager: null, container: null, dom: {}, gameActive: false, score: 0,
+                SCORE_TYPE: 'Score', ...config
+            });
+        }
+        init(manager, container) {
+            this.manager = manager; this.container = container;
+            this._queryDOM();
+            this.dom.backButton.addEventListener('click', () => this.manager.showMenu());
+            if (this.postInit) this.postInit();
+        }
+        render() {
+            const gameContentHTML = this.getGameContentHTML ? this.getGameContentHTML() : '';
+            return `<div class="card game-instance" id="${this.ID}-container">
+                        <div class="game-header"><h2>${this.NAME}</h2><p>${this.SCORE_TYPE}: <span class="score-display">0</span></p></div>
+                        <div class="feedback-area">AWAITING_START</div>
+                        <div class="game-content">${gameContentHTML}</div>
+                        <div class="options-area"></div>
+                        <button class="utility-button back-button">[Exit to Menu]</button>
+                    </div>`;
+        }
+        _queryDOM() {
+            this.dom.scoreDisplay = this.container.querySelector('.score-display');
+            this.dom.feedbackArea = this.container.querySelector('.feedback-area');
+            this.dom.gameContent = this.container.querySelector('.game-content');
+            this.dom.optionsArea = this.container.querySelector('.options-area');
+            this.dom.backButton = this.container.querySelector('.back-button');
+        }
+        showInstructions() { this.manager.showModal(this.NAME, this.INSTRUCTIONS, "Initiate", () => this.startGame()); }
+        startGame() { this.score = 0; this.updateScore(0); this.gameActive = true; }
+        updateScore(points) { this.score += points; if(this.dom.scoreDisplay) this.dom.scoreDisplay.textContent = this.score; }
+        showFeedback(correct, text) { this.dom.feedbackArea.textContent = text || (correct ? 'ACCESS_GRANTED' : 'ACCESS_DENIED'); const fc = correct ? 'feedback-correct' : 'feedback-wrong'; this.dom.feedbackArea.classList.add(fc); setTimeout(() => this.dom.feedbackArea.classList.remove(fc), 500); }
+        endGame() { this.stop(); this.manager.saveHistory(this.NAME, this.score); this.manager.showModal("Connection Lost", `Final Score: <span class="final-score-display">${this.score}</span>`, "Re-engage", () => this.startGame()); }
+        stop() { this.gameActive = false; if (this.interval) clearInterval(this.interval); if(this.animationFrame) cancelAnimationFrame(this.animationFrame); }
+        shuffle(a) { for(let i=a.length-1; i>0; i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+    }
+
+    // --- 3. GAME DEFINITIONS ---
+    const gameList = {};
+
+    gameList.colorClash = new (class extends BaseGame {
+        getGameContentHTML() { return `<div class="word-display" style="font-size:52px;font-weight:700;">AWAITING_INPUT</div>`;}
+        postInit() { this.colors = ['Red', 'Blue', 'Green', 'Orange', 'Cyan', 'Magenta']; this.colorMap = {'Red':'#ff4d4d', 'Blue':'#4d4dff', 'Green':'#00ff7f', 'Orange':'#fd7e14', 'Cyan':'#00ffff', 'Magenta':'#ff00ff'}; this.dom.wordDisplay = this.dom.gameContent.querySelector('.word-display'); }
+        startGame() { super.startGame(); this.generateButtons(); this.nextRound(); }
+        nextRound() { const t = this.colors[Math.floor(Math.random()*this.colors.length)]; this.fontColor = this.colors.filter(c=>c!==t)[Math.floor(Math.random()*(this.colors.length-1))]; this.dom.wordDisplay.textContent = t; this.dom.wordDisplay.style.color = this.colorMap[this.fontColor]; }
+        generateButtons() { this.dom.optionsArea.innerHTML = ''; this.colors.forEach(c => { const b = document.createElement('button'); b.textContent = c; b.className = 'option-button'; b.style.backgroundColor = this.colorMap[c]; b.onclick = () => this.checkAnswer(c); this.dom.optionsArea.appendChild(b); }); }
+        checkAnswer(c) { if (!this.gameActive) return; if (c === this.fontColor) { this.updateScore(1); this.showFeedback(true); this.nextRound(); } else { this.showFeedback(false); this.endGame(); }}
+    })({NAME: "Color Clash", ID: "color-clash", INSTRUCTIONS: "Match the font color, not the word."});
+
+    gameList.audioScape = new (class extends BaseGame {
+        postInit() { this.sounds = {'bell':{f:523, i:'fa-bell'},'plane':{f:440, i:'fa-plane'},'anchor':{f:349, i:'fa-anchor'},'heart':{f:261, i:'fa-heart'}}; this.sequence = []; this.playerSequence = []; this.audioContext = null; }
+        startGame() { if (!this.audioContext) this.audioContext = new (window.AudioContext || window.webkitAudioContext)(); super.startGame(); this.SCORE_TYPE = 'Level'; this.sequence = []; this.generateButtons(); this.score=0; this.updateScore(0); this.dom.scoreDisplay.textContent = 0; setTimeout(() => this.nextLevel(), 500); }
+        nextLevel() { this.updateScore(1); this.playerSequence = []; this.sequence.push(Object.keys(this.sounds)[Math.floor(Math.random() * 4)]); this.playSequence(); }
+        playSequence() { this.setButtonsDisabled(true); this.dom.feedbackArea.textContent = "Listen..."; let i=0; this.interval = setInterval(() => { if(!this.gameActive){clearInterval(this.interval);return;} if (i>=this.sequence.length) { clearInterval(this.interval); this.dom.feedbackArea.textContent = "Your turn..."; this.setButtonsDisabled(false); return; } this.playSound(this.sequence[i]); i++; }, 700);}
+        playSound(s) { const o = this.audioContext.createOscillator(), g = this.audioContext.createGain(); o.connect(g); g.connect(this.audioContext.destination); o.type='sine'; o.frequency.value = this.sounds[s].f; o.start(); o.stop(this.audioContext.currentTime + 0.4);}
+        generateButtons() { this.dom.optionsArea.innerHTML = ''; Object.keys(this.sounds).forEach(s => { const b = document.createElement('button'); b.className = 'option-button sound-button'; b.innerHTML = `<i class="fa-solid ${this.sounds[s].i}"></i>`; b.onclick = () => this.checkAnswer(s); this.dom.optionsArea.appendChild(b); });}
+        checkAnswer(s) { if(!this.gameActive) return; this.playSound(s); this.playerSequence.push(s); for(let i=0; i<this.playerSequence.length; i++) { if(this.playerSequence[i] !== this.sequence[i]) {this.score--; this.showFeedback(false); this.endGame(); return;}} if(this.playerSequence.length === this.sequence.length){ this.showFeedback(true); this.setButtonsDisabled(true); setTimeout(() => this.nextLevel(), 1000);}}
+        setButtonsDisabled(d) { this.dom.optionsArea.querySelectorAll('button').forEach(b => b.disabled = d);}
+    })({NAME: "Audio-Scape Recall", ID: "audio-scape", INSTRUCTIONS: "Listen to the sequence of sounds, then repeat it."});
+
+    gameList.mentalOrigami = new (class extends BaseGame {
+        getGameContentHTML() { return `<div class="origami-question-svg"></div>`; }
+        postInit() { this.questions = [{q:'<svg viewBox="0 0 100 100"><path d="M0 0 H100 V100 H0 Z" stroke-width="2"/><path d="M50 0 V100" stroke-width="1.5" stroke-dasharray="4"/></svg>', a:'<svg viewBox="0 0 100 100"><path d="M0 0 H50 V100 H0 Z" /></svg>'}, {q:'<svg viewBox="0 0 100 100"><path d="M0 100 L50 0 L100 100 Z" stroke-width="2"/><path d="M50 50 H100" stroke-width="1.5" stroke-dasharray="4"/></svg>', a:'<svg viewBox="0 0 100 100"><path d="M50 0 L100 100 L50 100 L50 50 Z" /></svg>'}]; this.decoys = ['<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" /></svg>', '<svg viewBox="0 0 100 100"><rect x="10" y="10" width="80" height="30" /></svg>', '<svg viewBox="0 0 100 100"><path d="M0 0 L100 100 M0 100 L100 0" /></svg>']; this.dom.questionContainer = this.dom.gameContent.querySelector('.origami-question-svg'); }
+        startGame() { super.startGame(); this.questionIndex = -1; this.nextRound(); }
+        nextRound() { this.questionIndex++; if(this.questionIndex >= this.questions.length) { this.showFeedback(true, "All Puzzles Solved!"); this.endGame(); return; } const q = this.questions[this.questionIndex]; this.dom.questionContainer.innerHTML = q.q; this.dom.optionsArea.innerHTML = ''; const options = this.shuffle([q.a, ...this.shuffle(this.decoys).slice(0, 3)]); options.forEach(o => { const d = document.createElement('div'); d.className='origami-option'; d.innerHTML=o; d.onclick=()=>this.checkAnswer(o===q.a); this.dom.optionsArea.appendChild(d); }); }
+        checkAnswer(isCorrect) { if(!this.gameActive)return; if(isCorrect) { this.updateScore(1); this.showFeedback(true); this.nextRound(); } else { this.showFeedback(false); this.endGame(); } }
+    })({NAME: "Mental Origami", ID: "mental-origami", INSTRUCTIONS: "Which shape results from the fold?"});
+
+    gameList.causalChain = new (class extends BaseGame {
+        getGameContentHTML() { return `<div id="causal-container"></div>`; }
+        postInit() { this.events = [{id:1, text:'Wake up', i:'fa-bed'},{id:2, text:'Brew coffee', i:'fa-mug-hot'},{id:3, text:'Drink coffee', i:'fa-check'},{id:4, text:'Feel awake', i:'fa-bolt'}]; this.containerEl = this.dom.gameContent.querySelector('#causal-container'); }
+        startGame() { super.startGame(); this.containerEl.innerHTML = ''; this.shuffle(this.events).forEach(e => { this.containerEl.innerHTML += `<div class="causal-item" draggable="true" data-id="${e.id}"><i class="fa-solid ${e.i}"></i>${e.text}</div>`; }); this.dom.optionsArea.innerHTML = `<button id="check-chain">Check Order</button>`; this.dom.optionsArea.querySelector('#check-chain').onclick = () => this.checkOrder(); this.addDragListeners(); }
+        addDragListeners() { const items = this.containerEl.querySelectorAll('.causal-item'); let dragSrcEl = null; items.forEach(item => { item.addEventListener('dragstart', e => { dragSrcEl=item; e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/html', item.innerHTML); e.dataTransfer.setData('text/plain', item.dataset.id); item.classList.add('dragging'); }); item.addEventListener('dragover', e => e.preventDefault()); item.addEventListener('drop', e => { e.stopPropagation(); if (dragSrcEl !== item) { [dragSrcEl.innerHTML, item.innerHTML] = [item.innerHTML, dragSrcEl.innerHTML]; [dragSrcEl.dataset.id, item.dataset.id] = [item.dataset.id, e.dataTransfer.getData('text/plain')]; } }); item.addEventListener('dragend', e => item.classList.remove('dragging')); }); }
+        checkOrder() { if(!this.gameActive) return; const currentOrder = [...this.containerEl.querySelectorAll('.causal-item')].map(item => parseInt(item.dataset.id)); const correct = JSON.stringify(currentOrder) === JSON.stringify([1,2,3,4]); if(correct) {this.updateScore(100); this.showFeedback(true);} else {this.showFeedback(false);} this.endGame(); }
+    })({NAME: "Causal Chain", ID: "causal-chain", INSTRUCTIONS: "Drag and drop the events into the correct logical order."});
+
+    gameList.inferenceIsland = new (class extends BaseGame {
+        getGameContentHTML() { return `<ul class="inference-clues"><li>The gem is not in a corner.</li><li>The dig site is directly to the left of the gem.</li></ul><div class="inference-grid"></div>`;}
+        postInit() { this.items = ['', '<i class="fa-solid fa-tree"></i>', '<i class="fa-solid fa-gem"></i>', '<i class="fa-solid fa-person-digging"></i>']; this.solution = [0,3,1,3,2,1,1,0,0]; this.grid = this.dom.gameContent.querySelector('.inference-grid');}
+        startGame() { super.startGame(); this.grid.innerHTML = ''; for(let i=0; i<9; i++) { const cell = document.createElement('div'); cell.className = 'grid-cell'; cell.dataset.index = i; cell.dataset.item = 0; cell.onclick = () => this.cycleItem(cell); this.grid.appendChild(cell); } this.dom.optionsArea.innerHTML = `<button id="check-island">Check Grid</button>`; this.dom.optionsArea.querySelector('#check-island').onclick = () => this.checkGrid(); }
+        cycleItem(cell) { if(!this.gameActive)return; let currentItem = parseInt(cell.dataset.item); currentItem = (currentItem + 1) % this.items.length; cell.dataset.item = currentItem; cell.innerHTML = this.items[currentItem] || '';}
+        checkGrid() { if(!this.gameActive) return; const userGrid = [...this.grid.querySelectorAll('.grid-cell')].map(c => parseInt(c.dataset.item)); if(JSON.stringify(userGrid) === JSON.stringify(this.solution)) {this.updateScore(150); this.showFeedback(true);} else {this.showFeedback(false);} this.endGame();}
+    })({NAME: "Inference Island", ID: "inference-island", INSTRUCTIONS: "Use the clues to place items on the grid."});
+
+    gameList.rhythmReplay = new (class extends BaseGame {
+        postInit() { this.colors = ['#ff4d4d', '#4d4dff', '#00ff7f', '#fd7e14']; this.sequence = []; this.playerSequence = []; }
+        startGame() { super.startGame(); this.SCORE_TYPE = 'Level'; this.sequence = []; this.dom.optionsArea.innerHTML=''; this.colors.forEach((c,i) => { const b = document.createElement('button'); b.className = 'option-button rhythm-button'; b.style.backgroundColor = c; b.dataset.index = i; b.onclick=()=>this.checkAnswer(i); this.dom.optionsArea.appendChild(b); }); this.score=0; this.updateScore(0); this.dom.scoreDisplay.textContent = 0; setTimeout(() => this.nextLevel(), 500); }
+        nextLevel() { this.updateScore(1); this.playerSequence = []; this.sequence.push(Math.floor(Math.random() * 4)); this.playSequence(); }
+        playSequence() { this.setButtonsDisabled(true); this.dom.feedbackArea.textContent = "Watch..."; let i=0; this.interval = setInterval(() => { if(!this.gameActive){clearInterval(this.interval);return;} if (i>=this.sequence.length) { clearInterval(this.interval); this.dom.feedbackArea.textContent = "Your turn..."; this.setButtonsDisabled(false); return; } this.highlightButton(this.sequence[i]); i++; }, 600);}
+        highlightButton(i) { const b = this.dom.optionsArea.querySelector(`[data-index='${i}']`); if(b) {b.classList.add('active'); setTimeout(()=>b.classList.remove('active'), 300);} }
+        checkAnswer(i) { if(!this.gameActive) return; this.highlightButton(i); this.playerSequence.push(i); for(let j=0; j<this.playerSequence.length; j++) { if(this.playerSequence[j] !== this.sequence[j]) { this.score--; this.showFeedback(false); this.endGame(); return;}} if(this.playerSequence.length === this.sequence.length){ this.showFeedback(true); this.setButtonsDisabled(true); setTimeout(() => this.nextLevel(), 1000);}}
+        setButtonsDisabled(d) { this.dom.optionsArea.querySelectorAll('button').forEach(b => b.disabled = d);}
+    })({NAME: "Rhythm Replay", ID: "rhythm-replay", INSTRUCTIONS: "Repeat the light pattern."});
+
+    gameList.mirrorImage = new (class extends BaseGame {
+        getGameContentHTML() { return `<div class="mirror-question-svg"></div>`; }
+        postInit() { this.questions = [{q: '<svg viewBox="0 0 100 100"><path d="M20 80 L50 20 L80 80" /></svg>', a: '<svg viewBox="0 0 100 100" transform="scale(-1, 1) translate(-100 0)"><path d="M20 80 L50 20 L80 80" /></svg>'}, {q: '<svg viewBox="0 0 100 100"><path d="M20 20 H80 V50" /></svg>', a: '<svg viewBox="0 0 100 100" transform="scale(-1, 1) translate(-100 0)"><path d="M20 20 H80 V50" /></svg>'}]; this.decoys = ['<svg viewBox="0 0 100 100" transform="rotate(90 50 50)"><path d="M20 80 L50 20 L80 80" /></svg>', '<svg viewBox="0 0 100 100"><path d="M20 50 H80" /></svg>']; this.dom.questionContainer = this.dom.gameContent.querySelector('.mirror-question-svg'); }
+        startGame() { super.startGame(); this.questionIndex = -1; this.nextRound(); }
+        nextRound() { this.questionIndex++; if(this.questionIndex >= this.questions.length) { this.showFeedback(true, "All Puzzles Solved!"); this.endGame(); return; } const q = this.questions[this.questionIndex]; this.dom.questionContainer.innerHTML = q.q; this.dom.optionsArea.innerHTML = ''; const options = this.shuffle([q.a, ...this.shuffle(this.decoys).slice(0, 1)]); options.forEach(o => { const d = document.createElement('div'); d.className='mirror-option'; d.innerHTML=o; d.onclick=()=>this.checkAnswer(o===q.a); this.dom.optionsArea.appendChild(d); }); }
+        checkAnswer(isCorrect) { if(!this.gameActive)return; if(isCorrect) { this.updateScore(1); this.showFeedback(true); this.nextRound(); } else { this.showFeedback(false); this.endGame(); } }
+    })({NAME: "Mirror Image", ID: "mirror-image", INSTRUCTIONS: "Choose the perfectly mirrored image."});
+    
+    gameList.connotativeConnections = new (class extends BaseGame {
+        getGameContentHTML() { return `<h3 id="cc-word" style="font-size:1.5em; color: var(--primary-glow);"></h3>`; }
+        postInit() { this.questions = [{q: "Storm", o: ["Water", "Noise", "Chaos", "Cloud"], a: 2}, {q:"Library", o:["Book", "Silence", "Glasses", "Knowledge"], a:3}]; this.dom.word = this.dom.gameContent.querySelector('#cc-word'); }
+        startGame() { super.startGame(); this.questionIndex = -1; this.nextRound(); }
+        nextRound() { this.questionIndex++; if(this.questionIndex >= this.questions.length) { this.showFeedback(true, "All questions complete!"); this.endGame(); return; } const q = this.questions[this.questionIndex]; this.dom.word.textContent = q.q; this.dom.optionsArea.innerHTML = ''; q.o.forEach((opt, i) => { const b = document.createElement('button'); b.textContent = opt; b.className='option-button'; b.onclick = () => this.checkAnswer(i === q.a); this.dom.optionsArea.appendChild(b); });}
+        checkAnswer(isCorrect) { if(!this.gameActive)return; if(isCorrect) { this.updateScore(10); this.showFeedback(true); this.nextRound(); } else { this.showFeedback(false); this.endGame(); } }
+    })({NAME: "Connotations", ID: "connotative-connections", INSTRUCTIONS: "Which word has the strongest connection?"});
+
+    gameList.gibberishGuru = new (class extends BaseGame {
+        getGameContentHTML() { return `<h3 id="gg-word" style="font-size:2em;"></h3><form id="gg-form"><input type="text" class="gg-input" autocomplete="off" /></form>`; }
+        postInit() { this.words = [{g:"Enuff", c:"enough"}, {g:"Sykologee", c:"psychology"}, {g:"Knewmonia", c:"pneumonia"}]; this.dom.form=this.dom.gameContent.querySelector('#gg-form'); this.dom.input=this.dom.gameContent.querySelector('.gg-input'); this.dom.word=this.dom.gameContent.querySelector('#gg-word'); }
+        startGame() { super.startGame(); this.questionIndex = -1; this.dom.form.onsubmit = e => { e.preventDefault(); this.checkAnswer(); }; this.nextRound(); }
+        nextRound() { this.questionIndex++; if(this.questionIndex >= this.words.length) { this.showFeedback(true, "All words corrected!"); this.endGame(); return; } this.currentWord = this.words[this.questionIndex]; this.dom.word.textContent = this.currentWord.g; this.dom.input.value=''; this.dom.input.focus(); }
+        checkAnswer() { if(!this.gameActive) return; const isCorrect = this.dom.input.value.trim().toLowerCase() === this.currentWord.c; if(isCorrect){ this.updateScore(20); this.showFeedback(true); this.nextRound(); } else { this.showFeedback(false); this.endGame(); } }
+    })({NAME: "Gibberish Guru", ID: "gibberish-guru", INSTRUCTIONS: "Type the correct spelling of the phonetic word."});
+
+    gameList.focusFlow = new (class extends BaseGame {
+        getGameContentHTML() { return `<canvas id="ff-canvas" width="600" height="300"></canvas>`; }
+        postInit() {
+            this.canvas = this.dom.gameContent.querySelector('#ff-canvas');
+            this.ctx = this.canvas.getContext('2d');
+            this.particles = [];
+            this.player = { x: 300, y: 150, size: 15, angle: 0, targetAngle: 0, speed: 0.15 };
+        }
+        startGame() {
+            super.startGame();
+            this.SCORE_TYPE = 'Time (ms)';
+            this.mouse = { x: 300, y: 150 };
+            this.target = { x: 100, y: 100, r: 25, vx: 1.5, vy: 1.5, pulse: 0 };
+            this.distractors = Array(5).fill().map(() => ({ x: Math.random() * 600, y: Math.random() * 300, r: 15, vx: (Math.random() - 0.5) * 4, vy: (Math.random() - 0.5) * 4 }));
+            
+            this.ctx.clearRect(0, 0, 600, 300);
+            this.drawGrid();
+            this.drawTarget(this.target);
+            this.distractors.forEach(d => this.drawDistractor(d));
+            this.drawPlayer();
+
+            let countdown = 3;
+            this.dom.feedbackArea.textContent = `Get Ready... ${countdown}`;
+            this.interval = setInterval(() => {
+                countdown--;
+                this.dom.feedbackArea.textContent = countdown > 0 ? `Get Ready... ${countdown}` : "GO!";
+                if (countdown <= 0) {
+                    clearInterval(this.interval);
+                    if (this.gameActive) this.startMoving();
+                }
+            }, 1000);
+        }
+        startMoving() {
+            this.startTime = Date.now();
+            this.canvas.onmousemove = e => { const rect = this.canvas.getBoundingClientRect(); this.mouse.x = e.clientX - rect.left; this.mouse.y = e.clientY - rect.top; };
+            this.animationFrame = requestAnimationFrame(() => this.gameLoop());
+        }
+        gameLoop() {
+            if (!this.gameActive) return;
+            this.score = Date.now() - this.startTime;
+            this.dom.scoreDisplay.textContent = this.score;
+            
+            // Background & Grid
+            this.ctx.fillStyle = 'rgba(13, 13, 13, 0.25)';
+            this.ctx.fillRect(0, 0, 600, 300);
+            this.drawGrid();
+
+            // Particles
+            this.updateParticles();
+
+            // Game Objects
+            this.updatePlayer();
+            this.updateAndDraw(this.target, (p) => this.drawTarget(p));
+            this.distractors.forEach(d => this.updateAndDraw(d, (p) => this.drawDistractor(p)));
+            
+            // Check collisions
+            const dx = this.player.x - this.target.x, dy = this.player.y - this.target.y;
+            if (Math.sqrt(dx * dx + dy * dy) > this.target.r) { this.createExplosion(this.player.x, this.player.y, '#00ffff'); this.showFeedback(false, "TARGET_LOST"); this.endGame(); return; }
+            for (const d of this.distractors) {
+                const dx2 = this.player.x - d.x, dy2 = this.player.y - d.y;
+                if (Math.sqrt(dx2 * dx2 + dy2 * dy2) < this.player.size + d.r) { this.createExplosion(this.player.x, this.player.y, '#ff4d4d'); this.showFeedback(false, "COLLISION"); this.endGame(); return; }
+            }
+            this.animationFrame = requestAnimationFrame(() => this.gameLoop());
+        }
+        createExplosion(x, y, color) { for(let i=0; i<30; i++) { this.particles.push({x,y,vx:(Math.random()-0.5)*8, vy:(Math.random()-0.5)*8, life: 50, color}); } }
+        updateParticles() {
+            for(let i = this.particles.length - 1; i >= 0; i--) {
+                const p = this.particles[i];
+                p.x += p.vx; p.y += p.vy; p.life--;
+                if(p.life <= 0) { this.particles.splice(i, 1); }
+                else { this.ctx.fillStyle = p.color; this.ctx.globalAlpha = p.life/50; this.ctx.fillRect(p.x, p.y, 2, 2); }
+            }
+            this.ctx.globalAlpha = 1;
+        }
+        drawGrid() { this.ctx.strokeStyle = 'rgba(0, 255, 255, 0.1)'; this.ctx.lineWidth = 1; for(let i=0; i<600; i+=20) { this.ctx.beginPath(); this.ctx.moveTo(i,0); this.ctx.lineTo(i,300); this.ctx.stroke(); } for(let i=0; i<300; i+=20) { this.ctx.beginPath(); this.ctx.moveTo(0,i); this.ctx.lineTo(600,i); this.ctx.stroke(); }}
+        updateAndDraw(p, drawFunc) { p.x += p.vx; p.y += p.vy; if (p.x < p.r || p.x > 600 - p.r) p.vx *= -1; if (p.y < p.r || p.y > 300 - p.r) p.vy *= -1; drawFunc(p); }
+        drawTarget(p) { p.pulse += 0.1; const radius = p.r + Math.sin(p.pulse) * 3; this.ctx.strokeStyle = '#00ff7f'; this.ctx.lineWidth = 2; this.ctx.beginPath(); this.ctx.arc(p.x, p.y, radius, 0, Math.PI * 2); this.ctx.stroke(); }
+        drawDistractor(p) { this.ctx.fillStyle = '#ff4d4d'; this.ctx.beginPath(); this.ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); this.ctx.fill(); this.ctx.fillStyle = `rgba(255, 255, 255, ${Math.random() * 0.5})`; this.ctx.fillRect(p.x - p.r, p.y - p.r, p.r*2, p.r*2); }
+        updatePlayer() {
+            const dx = this.mouse.x - this.player.x; const dy = this.mouse.y - this.player.y;
+            this.player.targetAngle = Math.atan2(dy, dx);
+            let angleDiff = this.player.targetAngle - this.player.angle;
+            while(angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+            while(angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+            this.player.angle += angleDiff * 0.2;
+            this.player.x += dx * this.player.speed; this.player.y += dy * this.player.speed;
+            if(Math.random() > 0.5) this.particles.push({x:this.player.x,y:this.player.y, vx:(Math.random()-0.5)*0.5,vy:(Math.random()-0.5)*0.5, life:20, color:'#00ffff'});
+            this.drawPlayer();
+        }
+        drawPlayer() {
+            this.ctx.save(); this.ctx.translate(this.player.x, this.player.y); this.ctx.rotate(this.player.angle);
+            this.ctx.fillStyle = '#00ffff'; this.ctx.beginPath(); this.ctx.moveTo(this.player.size, 0); this.ctx.lineTo(-this.player.size/2, -this.player.size/2); this.ctx.lineTo(-this.player.size/2, this.player.size/2); this.ctx.closePath(); this.ctx.fill();
+            this.ctx.restore();
+        }
+    })({NAME: "Focus Flow 2D", ID: "focus-flow", INSTRUCTIONS: "Guide your ship with the mouse to stay inside the green warp gate. Avoid the red glitch mines."});
+
+    gameList.ambiguityRiddle = new (class extends BaseGame {
+        getGameContentHTML() { return `<h3 id="ar-riddle" style="font-size:1.5em; color: var(--primary-glow);"></h3>`; }
+        postInit() {
+            this.questions = [
+                {q: "The old man the boat.", o: ["An old person is steering the boat.", "A group of old people work on the boat.", "The boat itself is old.", "A type of bird is on the boat."], a: [0, 1]},
+                {q:"I saw a man on a hill with a telescope.", o:["I used a telescope to see a man on a hill.", "I saw a man who was on a hill and had a telescope.", "I am on a hill and saw a man with a telescope.", "The man is a giant." ], a: [0, 1]}
+            ];
+            this.selected = [];
+            this.dom.riddle = this.dom.gameContent.querySelector('#ar-riddle');
+        }
+        startGame() { super.startGame(); this.questionIndex = -1; this.nextRound();}
+        nextRound() {
+            this.questionIndex++;
+            this.selected = [];
+            if(this.questionIndex >= this.questions.length){ this.showFeedback(true, "All riddles solved!"); this.endGame(); return; }
+            const q = this.questions[this.questionIndex];
+            this.dom.riddle.textContent = q.q;
+            this.dom.optionsArea.innerHTML = '';
+            q.o.forEach((opt, i) => {
+                const d = document.createElement('div');
+                d.className='ar-option';
+                d.textContent=opt;
+                d.dataset.index = i;
+                d.onclick=()=>this.selectAnswer(d);
+                this.dom.optionsArea.appendChild(d);
+            });
+            this.dom.feedbackArea.textContent = "Select two answers...";
+        }
+        selectAnswer(el) {
+            if(!this.gameActive) return;
+            el.classList.toggle('selected');
+            this.selected = [...this.dom.optionsArea.querySelectorAll('.selected')].map(e => parseInt(e.dataset.index));
+            if(this.selected.length === 2) { this.checkAnswer();}
+        }
+        checkAnswer() {
+            const q = this.questions[this.questionIndex];
+            const isCorrect = [...this.selected].sort().toString() === [...q.a].sort().toString();
+            if(isCorrect) {
+                this.updateScore(50);
+                this.showFeedback(true);
+                setTimeout(()=>this.nextRound(), 1000);
+            } else {
+                this.showFeedback(false);
+                this.endGame();
+            }
+        }
+    })({NAME: "Ambiguity Riddle", ID: "ambiguity-riddle", INSTRUCTIONS: "Read the sentence and select the two correct interpretations."});
+    
+    gameList.unusualUses = new (class extends BaseGame {
+        getGameContentHTML() { return `<h3 id="uu-prompt" style="font-size:1.5em;"></h3><textarea class="uu-textarea"></textarea>`;}
+        postInit() {
+            this.objects = ["Brick", "Paperclip", "Bottle"];
+            this.dom.textarea = this.dom.gameContent.querySelector('.uu-textarea');
+            this.dom.prompt = this.dom.gameContent.querySelector('#uu-prompt');
+        }
+        startGame() {
+            super.startGame();
+            this.SCORE_TYPE = "Uses Found";
+            this.objectIndex = Math.floor(Math.random() * this.objects.length);
+            this.dom.prompt.innerHTML = `List unusual uses for a: <span style="color:var(--primary-glow);">${this.objects[this.objectIndex]}</span>`;
+            this.dom.textarea.value = '';
+            this.dom.textarea.focus();
+            this.timeLeft = 60;
+            this.dom.feedbackArea.textContent = `Timer: ${this.timeLeft}`;
+            this.interval = setInterval(() => {
+                if(!this.gameActive){clearInterval(this.interval);return;}
+                this.timeLeft--;
+                this.dom.feedbackArea.textContent = `Timer: ${this.timeLeft}`;
+                if(this.timeLeft <= 0) {
+                    this.endGame(true);
+                }
+            }, 1000);
+        }
+        endGame(timeUp = false) {
+            if(!this.gameActive && !timeUp) return; // Prevent double endGame calls
+            this.stop(); // Use base stop method to clear interval and set gameActive to false
+            const uses = this.dom.textarea.value.split(/[\n,]+/).map(u => u.trim()).filter(u => u.length > 2);
+            this.score = uses.length;
+            this.dom.scoreDisplay.textContent = this.score;
+            this.manager.saveHistory(this.NAME, this.score);
+            this.manager.showModal("Time's Up!", `You found <span class="final-score-display">${this.score}</span> uses!`, "Try Again", () => this.startGame());
+        }
+    })({NAME: "Unusual Uses", ID: "unusual-uses", INSTRUCTIONS: "You have 60 seconds. List as many creative, non-standard uses for the object as you can, separated by commas or new lines."});
+
+    mainManager.init();
+});
+</script>
+</body>
+</html>
